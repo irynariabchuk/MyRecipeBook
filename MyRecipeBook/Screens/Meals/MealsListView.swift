@@ -11,7 +11,7 @@ import SwiftUI
 struct MealsListView: View {
     
     // MARK: - Private Properties
-    @ObservedObject private var viewModel = MealsViewModel()
+    @ObservedObject var viewModel: MealsListViewModel
     
     private let gridLayout: [GridItem] = Array(
         repeating: GridItem(.flexible(), spacing: 0),
@@ -27,7 +27,7 @@ struct MealsListView: View {
         }
         .navigationViewStyle(.stack)
         .task {
-            viewModel.fetchMeals()
+            await viewModel.fetchMeals()
         }
         .errorAlert(
             isPresented: .constant(viewModel.state.isError),
@@ -45,7 +45,15 @@ struct MealsListView: View {
         ScrollView {
             LazyVGrid(columns: gridLayout, spacing: 20) {
                 ForEach(viewModel.meals) { meal in
-                    NavigationLink(destination: MealDetailsView(viewModel: MealDetailsViewModel(id: meal.id))) {
+                    NavigationLink(
+                        destination:
+                            MealDetailsView(
+                                viewModel: MealDetailsViewModel(
+                                    id: meal.id,
+                                    networkManager: viewModel.networkManager
+                                )
+                            )
+                    ) {
                         MealCellView(model: meal)
                     }
                 }
@@ -54,9 +62,4 @@ struct MealsListView: View {
         }
         .background(Color.primaryBackgroundColor)
     }
-}
-
-// MARK: - Preview
-#Preview {
-    MealsListView()
 }

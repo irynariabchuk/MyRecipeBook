@@ -10,11 +10,13 @@ import Foundation
 // MARK: - MealDetailsNetworkService
 final class MealDetailsNetworkService {
     
-    // MARK: - Singleton
-    static let shared = MealDetailsNetworkService()
-    
     // MARK: - Private Properties
-    private let networkManager = NetworkManager.shared
+    private let networkManager: NetworkManager
+    
+    // MARK: - Initialization
+    init(networkManager: NetworkManager) {
+        self.networkManager = networkManager
+    }
     
     // MARK: - Public Methods
     func fetchMealDetails(_ mealId: String) async throws -> MealDetails? {

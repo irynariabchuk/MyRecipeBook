@@ -10,6 +10,10 @@ import SwiftUI
 // MARK: - MealDetailsViewModel
 final class MealDetailsViewModel: ObservableObject {
     
+    // MARK: - Private Properties
+    private let mealDetailsNetworkService: MealDetailsNetworkService
+    let networkManager: NetworkManager
+
     // MARK: - Public Properties
     let dynamicImageHeight: CGFloat = CGFloat(200).scalableHeight
     
@@ -26,8 +30,11 @@ final class MealDetailsViewModel: ObservableObject {
     private var mealId: String
     
     // MARK: - Init
-    init(id: String) {
+    init(id: String, networkManager: NetworkManager) {
         mealId = id
+        self.networkManager = networkManager
+        mealDetailsNetworkService = MealDetailsNetworkService(networkManager: networkManager)
+        
     }
     
     // MARK: - Public Methods
@@ -36,7 +43,7 @@ final class MealDetailsViewModel: ObservableObject {
         state = .loading
         
         do {
-            if let fetchedMealDetails = try await MealDetailsNetworkService.shared.fetchMealDetails(mealId) {
+            if let fetchedMealDetails = try await mealDetailsNetworkService.fetchMealDetails(mealId) {
                 configureMealValues(meal: fetchedMealDetails)
                 state = .idle
             } else {

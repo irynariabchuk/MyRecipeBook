@@ -7,7 +7,7 @@
 
 import Foundation
 
-extension MealsViewModel {
+extension MealsListViewModel {
     
     // MARK: - MealDetailsState
     enum MealsListState {

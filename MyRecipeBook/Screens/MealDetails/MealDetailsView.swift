@@ -125,8 +125,3 @@ struct MealDetailsView: View {
         .frame(height: viewModel.dynamicImageHeight)
     }
 }
-
-// MARK: - Preview
-#Preview {
-    MealDetailsView(viewModel: MealDetailsViewModel(id: "52772"))
-}

@@ -7,12 +7,23 @@
 
 import Foundation
 
+// MARK: - URLSessionProtocol
+protocol URLSessionProtocol {
+    func data(for request: URLRequest) async throws -> (Data, URLResponse)
+}
+
+extension URLSession: URLSessionProtocol {}
+
 // MARK: - NetworkManager
 final class NetworkManager {
     
-    // MARK: - Singleton Instance
-    static let shared = NetworkManager()
+    private let session: URLSessionProtocol
     
+    // MARK: - Init
+    init(session: URLSessionProtocol = URLSession.shared) {
+        self.session = session
+    }
+
     // MARK: - Public Methods
     func request<T: Decodable>(
         url: URL,
@@ -31,7 +42,7 @@ final class NetworkManager {
         }
         
         do {
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await session.data(for: request)
             
             try validateResponse(response)
             
