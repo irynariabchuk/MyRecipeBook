@@ -12,19 +12,37 @@ protocol URLSessionProtocol {
     func data(for request: URLRequest) async throws -> (Data, URLResponse)
 }
 
+// MARK: - URLSession + URLSessionProtocol
 extension URLSession: URLSessionProtocol {}
 
+// MARK: - NetworkManagerProtocol
+protocol NetworkManagerProtocol {
+    func request<T: Decodable>(
+        url: URL,
+        method: HTTPMethod,
+        headers: [String: String]?,
+        body: Data?,
+        responseType: T.Type
+    ) async throws -> T
+}
+
 // MARK: - NetworkManager
-final class NetworkManager {
+final class NetworkManager: NetworkManagerProtocol {
     
     private let session: URLSessionProtocol
+    private let decoder: JSONDecoder
     
     // MARK: - Init
-    init(session: URLSessionProtocol = URLSession.shared) {
+    init(
+        session: URLSessionProtocol = URLSession.shared,
+        decoder: JSONDecoder = JSONDecoder()
+    ) {
         self.session = session
+        self.decoder = decoder
     }
-
+    
     // MARK: - Public Methods
+    /// Performs a network request and decodes the response into the specified type.
     func request<T: Decodable>(
         url: URL,
         method: HTTPMethod = .get,
@@ -32,7 +50,6 @@ final class NetworkManager {
         body: Data? = nil,
         responseType: T.Type
     ) async throws -> T {
-        
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
         request.allHTTPHeaderFields = headers
@@ -43,29 +60,47 @@ final class NetworkManager {
         
         do {
             let (data, response) = try await session.data(for: request)
-            
-            try validateResponse(response)
-            
-            return try JSONDecoder().decode(T.self, from: data)
+            try validateResponse(response, data: data)
+            return try decodeResponse(data: data, responseType: responseType)
+        } catch let error as NetworkError {
+            throw error
         } catch {
-            throw handleNetworkError(error)
+            throw handleError(error)
         }
     }
 }
 
+// MARK: - Private Methods
 private extension NetworkManager {
     
-    func validateResponse(_ response: URLResponse) throws {
+    /// Validates the HTTP response and attempts to decode server errors if the status code is invalid.
+    func validateResponse(_ response: URLResponse, data: Data) throws {
         guard let httpResponse = response as? HTTPURLResponse else {
             throw NetworkError.invalidResponse
         }
         
-        guard (200...299).contains(httpResponse.statusCode) else {
+        if !(200...299).contains(httpResponse.statusCode) {
+            if let serverError = try? decoder.decode(ErrorMainResponse.self, from: data) {
+                throw NetworkError.serverError(serverError.error)
+            }
+            
             throw NetworkError.statusCode(httpResponse.statusCode)
         }
     }
     
-    func handleNetworkError(_ error: Error) -> NetworkError {
+    /// Decodes a successful response into the specified type.
+    func decodeResponse<T: Decodable>(data: Data, responseType: T.Type) throws -> T {
+        do {
+            return try decoder.decode(T.self, from: data)
+        } catch let decodingError as DecodingError {
+            throw NetworkError.decodingError(decodingError)
+        } catch {
+            throw NetworkError.unknown(error.localizedDescription)
+        }
+    }
+    
+    /// Handles general errors, such as `URLError` or unknown errors.
+    func handleError(_ error: Error) -> NetworkError {
         if let urlError = error as? URLError {
             switch urlError.code {
             case .notConnectedToInternet:
@@ -75,10 +110,8 @@ private extension NetworkManager {
             default:
                 return .urlError(urlError)
             }
-        } else if let decodingError = error as? DecodingError {
-            return .decodingError(decodingError)
-        } else {
-            return .unknown(error.localizedDescription)
         }
+        
+        return .unknown(error.localizedDescription)
     }
 }

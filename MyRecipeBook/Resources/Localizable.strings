@@ -1,0 +1,22 @@
+/* 
+  Localizable.strings
+  MyRecipeBook
+
+  Created by Iryna Riabchuk on 18.01.2025.
+  
+*/
+
+// Home
+"no.meal.details.found" = "No meal details found.";
+
+// Error
+"Error" = "Error";
+"OK" = "OK";
+"server.error" = "Server Error: %@ (Code: %@)";
+"no.internet.connection" = "No internet connection. Please check your connection.";
+"timeout.error" = "The request timed out. Please try again later.";
+"http.error" = "HTTP Error: Received status code %@.";
+"invalid.response" = "Invalid response from the server.";
+"decoding.error" = "Failed to decode the response: %@";
+"url.error" = "URL Error: %@";
+"unknown.error" = "Unknown error occurred: %@";

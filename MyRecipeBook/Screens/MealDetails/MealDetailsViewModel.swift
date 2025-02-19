@@ -11,9 +11,8 @@ import SwiftUI
 final class MealDetailsViewModel: ObservableObject {
     
     // MARK: - Private Properties
-    private let mealDetailsNetworkService: MealDetailsNetworkService
-    let networkManager: NetworkManager
-
+    private let serviceContainer: ServiceContainerProtocol
+    
     // MARK: - Public Properties
     let dynamicImageHeight: CGFloat = CGFloat(200).scalableHeight
     
@@ -22,19 +21,17 @@ final class MealDetailsViewModel: ObservableObject {
     @Published var imageUrl: URL?
     @Published var instructions: String = ""
     @Published var ingredients: [Ingredient] = []
-
+    
     // MARK: - State
     @Published var state: MealDetailsState = .idle
-
+    
     // MARK: - Private Properties
     private var mealId: String
     
     // MARK: - Init
-    init(id: String, networkManager: NetworkManager) {
+    init(id: String, serviceContainer: ServiceContainerProtocol) {
         mealId = id
-        self.networkManager = networkManager
-        mealDetailsNetworkService = MealDetailsNetworkService(networkManager: networkManager)
-        
+        self.serviceContainer = serviceContainer
     }
     
     // MARK: - Public Methods
@@ -43,14 +40,14 @@ final class MealDetailsViewModel: ObservableObject {
         state = .loading
         
         do {
-            if let fetchedMealDetails = try await mealDetailsNetworkService.fetchMealDetails(mealId) {
+            if let fetchedMealDetails = try await serviceContainer.mealDetailsNetworkService.fetchMealDetails(mealId) {
                 configureMealValues(meal: fetchedMealDetails)
                 state = .idle
             } else {
-                state = .error("No meal details found.")
+                state = .error(LocalizedStrings.noMealDetailsFound)
             }
         } catch {
-            state = .error("Failed to fetch meal details: \(error.localizedDescription)")
+            state = .error(error.localizedDescription)
         }
     }
     

@@ -10,9 +10,8 @@ import Foundation
 // MARK: - MealsViewModel
 final class MealsListViewModel: ObservableObject {
     
-    // MARK: - Private Properties
-    let networkManager: NetworkManager
-    private let mealsListNetworkService: MealsListNetworkService
+    // MARK: - Public Properties
+    let serviceContainer: ServiceContainerProtocol
     
     // MARK: - Published Properties
     @Published var meals: [Meal] = []
@@ -20,10 +19,9 @@ final class MealsListViewModel: ObservableObject {
     // MARK: - State
     @Published var state: MealsListState = .idle
     
-    // MARK: - Initialization
-    init(networkManager: NetworkManager) {
-        self.networkManager = networkManager
-        mealsListNetworkService = MealsListNetworkService(networkManager: networkManager)
+    // MARK: - Init
+    init(serviceContainer: ServiceContainerProtocol) {
+        self.serviceContainer = serviceContainer
     }
     
     // MARK: - Public Methods
@@ -32,11 +30,11 @@ final class MealsListViewModel: ObservableObject {
         state = .loading
         
         do {
-            let fetchedMeals = try await mealsListNetworkService.fetchMeals(by: filter)
+            let fetchedMeals = try await serviceContainer.mealsListNetworkService.fetchData(by: filter)
             meals = sortMeals(fetchedMeals)
             state = .idle
         } catch {
-            state = .error("Failed to fetch meals: \(error.localizedDescription)")
+            state = .error(error.localizedDescription)
         }
     }
     

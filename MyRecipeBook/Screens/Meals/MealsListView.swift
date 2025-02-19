@@ -10,9 +10,10 @@ import SwiftUI
 // MARK: - MealsListView
 struct MealsListView: View {
     
-    // MARK: - Private Properties
+    // MARK: - Public Properties
     @ObservedObject var viewModel: MealsListViewModel
     
+    // MARK: - Private Properties
     private let gridLayout: [GridItem] = Array(
         repeating: GridItem(.flexible(), spacing: 0),
         count: UIDevice.current.userInterfaceIdiom == .phone ? 1 : 2
@@ -20,46 +21,42 @@ struct MealsListView: View {
     
     // MARK: - Views
     var body: some View {
-        NavigationView {
+        NavigationStack {
             scrollView
                 .navigationTitle("Receipts")
                 .navigationBarTitleDisplayMode(.inline)
-        }
-        .navigationViewStyle(.stack)
-        .task {
-            await viewModel.fetchMeals()
-        }
-        .errorAlert(
-            isPresented: .constant(viewModel.state.isError),
-            errorMessage: viewModel.state.error
-        )
-        .overlay {
-            if viewModel.state.isLoading {
-                ProgressView()
-            }
+                .navigationViewStyle(.stack)
+                .task {
+                    await viewModel.fetchMeals()
+                }
+                .errorAlert(
+                    isPresented: .constant(viewModel.state.isError),
+                    errorMessage: viewModel.state.error
+                )
+                .overlay {
+                    if viewModel.state.isLoading {
+                        ProgressView()
+                    }
+                }
+                .navigationDestination(for: String.self) { mealID in
+                    MealDetailsView(
+                        viewModel: MealDetailsViewModel(id: mealID, serviceContainer: viewModel.serviceContainer)
+                    )
+                }
         }
     }
     
     @ViewBuilder
-    var scrollView: some View {
+    private var scrollView: some View {
         ScrollView {
             LazyVGrid(columns: gridLayout, spacing: 20) {
                 ForEach(viewModel.meals) { meal in
-                    NavigationLink(
-                        destination:
-                            MealDetailsView(
-                                viewModel: MealDetailsViewModel(
-                                    id: meal.id,
-                                    networkManager: viewModel.networkManager
-                                )
-                            )
-                    ) {
+                    NavigationLink(value: meal.id) {
                         MealCellView(model: meal)
                     }
                 }
             }
             .padding(.top)
         }
-        .background(Color.primaryBackgroundColor)
     }
 }

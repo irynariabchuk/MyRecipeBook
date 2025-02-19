@@ -7,28 +7,35 @@
 
 import Foundation
 
+// MARK: - ExampleNetworkServiceProtocol
+protocol MealsListNetworkServiceProtocol {
+    func fetchData(by searchText: String) async throws -> [Meal]
+}
+
 // MARK: - MealsListNetworkService
-final class MealsListNetworkService {
-    
+final class MealsListNetworkService: MealsListNetworkServiceProtocol {
+ 
     // MARK: - Private Properties
-    private let networkManager: NetworkManager
+    private let networkManager: NetworkManagerProtocol
     
-    // MARK: - Initialization
-    init(networkManager: NetworkManager) {
+    // MARK: - Init
+    init(networkManager: NetworkManagerProtocol) {
         self.networkManager = networkManager
     }
     
     // MARK: - Public Methods
-    func fetchMeals(by filter: String) async throws -> [Meal] {
-        guard let url = Endpoint.meals(filter).url else {
-            throw URLError(.badURL)
+    func fetchData(by searchText: String) async throws -> [Meal] {
+        guard let url = Endpoint.meals(searchText).url else {
+            throw NetworkError.urlError(URLError(.badURL))
         }
         
-        let mealsResponse: MealsResponse = try await networkManager.request(
+        let response: MealsResponse = try await networkManager.request(
             url: url,
+            method: .get,
+            headers: nil,
+            body: nil,
             responseType: MealsResponse.self
         )
-
-        return mealsResponse.meals
+        return response.meals
     }
 }

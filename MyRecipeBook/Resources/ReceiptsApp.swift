@@ -11,16 +11,12 @@ import SwiftUI
 struct ReceiptsApp: App {
     
     // MARK: - Private Properties
-    private let networkManager = NetworkManager()
-    private var viewModel: MealsListViewModel
-
-    // MARK: - Init
-    init() {
-        viewModel = MealsListViewModel(networkManager: networkManager)
-    }
+    private let container = DependencyContainer()
     
     // MARK: - Views
     var body: some Scene {
+        let viewModel = MealsListViewModel(serviceContainer: container)
+        
         WindowGroup {
             MealsListView(viewModel: viewModel)
         }
